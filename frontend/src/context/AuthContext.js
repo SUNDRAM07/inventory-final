@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+
+// Configure axios defaults
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const AuthContext = createContext();
 
@@ -12,15 +16,27 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
+      // Set axios default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setIsAuthenticated(true);
+      
+      // Decode JWT token to get user info
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({
+          username: payload.sub,
+          role: payload.role
+        });
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+      }
     }
     setLoading(false);
   }, []);
@@ -30,46 +46,64 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/login', { username, password });
       const { access_token } = response.data;
       
+      // Decode token to get user info
+      const payload = JSON.parse(atob(access_token.split('.')[1]));
+      const userInfo = {
+        username: payload.sub,
+        role: payload.role
+      };
+      
       localStorage.setItem('token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      setIsAuthenticated(true);
-      setUser({ username });
-      return { success: true };
+      setUser(userInfo);
+      toast.success('Login successful!');
+      return true;
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
-      };
+      const message = error.response?.data?.detail || 'Login failed';
+      toast.error(message);
+      return false;
+    }
+  };
+
+  const register = async (username, password, role = 'user') => {
+    try {
+      const response = await axios.post('/register', { username, password, role });
+      toast.success('Registration successful! Please login.');
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Registration failed';
+      toast.error(message);
+      return false;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
-    setIsAuthenticated(false);
     setUser(null);
+    toast.info('Logged out successfully');
   };
 
-  const register = async (username, password) => {
-    try {
-      await axios.post('/register', { username, password });
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Registration failed' 
-      };
-    }
-  };
+  // Role-based helper functions
+  const isAdmin = () => user?.role === 'admin';
+  const isManager = () => user?.role === 'manager';
+  const isUser = () => user?.role === 'user';
+  const canManageProducts = () => isAdmin() || isManager();
+  const canManageUsers = () => isAdmin();
+  const canViewAnalytics = () => isAdmin() || isManager();
 
   const value = {
-    isAuthenticated,
     user,
     login,
-    logout,
     register,
-    loading
+    logout,
+    loading,
+    isAdmin,
+    isManager,
+    isUser,
+    canManageProducts,
+    canManageUsers,
+    canViewAnalytics
   };
 
   return (

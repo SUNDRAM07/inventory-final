@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -12,6 +13,7 @@ const Dashboard = () => {
   });
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { canManageProducts, canViewAnalytics } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -53,13 +55,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '30px', color: '#333' }}>
-        <i className="fas fa-tachometer-alt"></i> Dashboard
-      </h1>
+    <div className="container">
+      <div className="page-header">
+        <h1><i className="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <p>Welcome to your inventory management dashboard</p>
+      </div>
 
       {/* Statistics Cards */}
-      <div className="dashboard-stats">
+      <div className="dashboard">
         <div className="stat-card">
           <h3>{stats.totalProducts}</h3>
           <p>Total Products</p>
@@ -78,32 +81,34 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="card">
-        <h3 style={{ marginBottom: '20px' }}>
-          <i className="fas fa-bolt"></i> Quick Actions
-        </h3>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          <Link to="/add-product" className="btn btn-primary">
-            <i className="fas fa-plus"></i> Add New Product
-          </Link>
-          <Link to="/products" className="btn btn-success">
-            <i className="fas fa-list"></i> View All Products
-          </Link>
-          <Link to="/analytics" className="btn btn-primary">
-            <i className="fas fa-chart-bar"></i> View Analytics
-          </Link>
+      {/* Quick Actions - Only show if user has permissions */}
+      {(canManageProducts() || canViewAnalytics()) && (
+        <div className="quick-actions">
+          <h3><i className="fas fa-bolt"></i> Quick Actions</h3>
+          <div className="action-buttons">
+            {canManageProducts() && (
+              <Link to="/add-product" className="action-btn primary">
+                <i className="fas fa-plus"></i> Add New Product
+              </Link>
+            )}
+            <Link to="/products" className="action-btn secondary">
+              <i className="fas fa-list"></i> View All Products
+            </Link>
+            {canViewAnalytics() && (
+              <Link to="/analytics" className="action-btn primary">
+                <i className="fas fa-chart-bar"></i> View Analytics
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recent Products */}
-      <div className="card">
-        <h3 style={{ marginBottom: '20px' }}>
-          <i className="fas fa-clock"></i> Recent Products
-        </h3>
+      <div className="recent-products">
+        <h3><i className="fas fa-clock"></i> Recent Products</h3>
         {recentProducts.length > 0 ? (
-          <div className="table-responsive">
-            <table className="table">
+          <div className="products-table">
+            <table>
               <thead>
                 <tr>
                   <th>Name</th>
@@ -123,7 +128,7 @@ const Dashboard = () => {
                     <td>{product.quantity}</td>
                     <td>${product.price}</td>
                     <td>
-                      <span className={`badge ${product.quantity < 10 ? 'badge-danger' : 'badge-success'}`}>
+                      <span className={`status-badge ${product.quantity < 10 ? 'low-stock' : 'in-stock'}`}>
                         {product.quantity < 10 ? 'Low Stock' : 'In Stock'}
                       </span>
                     </td>
@@ -133,9 +138,14 @@ const Dashboard = () => {
             </table>
           </div>
         ) : (
-          <p style={{ textAlign: 'center', color: '#666' }}>
-            No products found. <Link to="/add-product">Add your first product</Link>
-          </p>
+          <div className="no-products">
+            <p>No products found.</p>
+            {canManageProducts() && (
+              <Link to="/add-product" className="btn btn-primary">
+                <i className="fas fa-plus"></i> Add Your First Product
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </div>

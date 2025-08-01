@@ -5,18 +5,19 @@ from datetime import timedelta
 from typing import List
 
 from app.database import get_db, engine
-from app.models import Base
+from app.models import Base, UserRole
 from app.schemas import (
     UserCreate, User, UserLogin, Token, 
     ProductCreate, Product, ProductUpdate, ProductResponse
 )
 from app.crud import (
-    create_user, get_user_by_username, 
+    create_user, get_user_by_username, get_all_users, update_user_role, delete_user,
     create_product, get_products, update_product_quantity
 )
 from app.auth import (
     authenticate_user, create_access_token, 
-    ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
+    ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user,
+    require_admin, require_admin_or_manager
 )
 
 # Create database tables
@@ -24,7 +25,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Inventory Management Tool",
-    description="A REST API for managing inventory for small businesses",
+    description="A REST API for managing inventory for small businesses with role-based access control",
     version="1.0.0"
 )
 
@@ -44,7 +45,7 @@ def read_root():
 @app.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """
-    Register a new user.
+    Register a new user. Default role is USER.
     """
     db_user = get_user_by_username(db, username=user.username)
     if db_user:
@@ -57,7 +58,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 @app.post("/login", response_model=Token)
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     """
-    Authenticate user and return JWT token.
+    Authenticate user and return JWT token with role information.
     """
     user = authenticate_user(db, user_credentials.username, user_credentials.password)
     if not user:
@@ -68,18 +69,56 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.username, "role": user.role}, 
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+# Admin-only endpoints
+@app.get("/users", response_model=List[User])
+def get_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin())
+):
+    """
+    Get all users. Admin only.
+    """
+    return get_all_users(db, skip=skip, limit=limit)
+
+@app.put("/users/{user_id}/role")
+def update_user_role_endpoint(
+    user_id: int,
+    role: UserRole,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin())
+):
+    """
+    Update user role. Admin only.
+    """
+    return update_user_role(db=db, user_id=user_id, new_role=role)
+
+@app.delete("/users/{user_id}")
+def delete_user_endpoint(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin())
+):
+    """
+    Delete user. Admin only.
+    """
+    return delete_user(db=db, user_id=user_id)
+
+# Product endpoints with role-based access
 @app.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def add_product(
     product: ProductCreate, 
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_manager())
 ):
     """
-    Add a new product to inventory.
+    Add a new product to inventory. Admin and Manager only.
     """
     db_product = create_product(db=db, product=product)
     return {"product_id": db_product.id, "message": "Product created successfully"}
@@ -89,10 +128,10 @@ def update_product_quantity_endpoint(
     product_id: int,
     product_update: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_manager())
 ):
     """
-    Update product quantity.
+    Update product quantity. Admin and Manager only.
     """
     return update_product_quantity(db=db, product_id=product_id, quantity=product_update.quantity)
 
@@ -104,7 +143,7 @@ def get_products_endpoint(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all products with pagination.
+    Get all products with pagination. All authenticated users.
     """
     products = get_products(db, skip=skip, limit=limit)
     return products

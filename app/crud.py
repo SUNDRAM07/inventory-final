@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import User, Product
+from app.models import User, Product, UserRole
 from app.schemas import UserCreate, ProductCreate, ProductUpdate
 from app.auth import get_password_hash
 from fastapi import HTTPException, status
@@ -10,11 +10,41 @@ def get_user_by_username(db: Session, username: str):
 
 def create_user(db: Session, user: UserCreate):
     hashed_password = get_password_hash(user.password)
-    db_user = User(username=user.username, hashed_password=hashed_password)
+    db_user = User(
+        username=user.username, 
+        hashed_password=hashed_password,
+        role=user.role.value if user.role else "user"
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def get_all_users(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(User).offset(skip).limit(limit).all()
+
+def update_user_role(db: Session, user_id: int, new_role: UserRole):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found"
+        )
+    user.role = new_role.value
+    db.commit()
+    db.refresh(user)
+    return user
+
+def delete_user(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {user_id} not found"
+        )
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}
 
 # Product CRUD operations
 def get_products(db: Session, skip: int = 0, limit: int = 100):

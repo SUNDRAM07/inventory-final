@@ -1,43 +1,77 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Products from './components/Products';
 import AddProduct from './components/AddProduct';
 import Analytics from './components/Analytics';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import Users from './components/Users';
+import Navbar from './components/Navbar';
 import './App.css';
 
-function App() {
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+  
+  return user ? children : <Navigate to="/" />;
+};
+
+const AppContent = () => {
+  const { user } = useAuth();
+
+  return (
+    <div className="App">
+      {user ? (
+        <>
+          <Navbar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/dashboard" element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              } />
+              <Route path="/products" element={
+                <PrivateRoute>
+                  <Products />
+                </PrivateRoute>
+              } />
+              <Route path="/add-product" element={
+                <PrivateRoute>
+                  <AddProduct />
+                </PrivateRoute>
+              } />
+              <Route path="/analytics" element={
+                <PrivateRoute>
+                  <Analytics />
+                </PrivateRoute>
+              } />
+              <Route path="/users" element={
+                <PrivateRoute>
+                  <Users />
+                </PrivateRoute>
+              } />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </main>
+        </>
+      ) : (
+        <Login />
+      )}
+    </div>
+  );
+};
+
+const App = () => {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
-}
-
-function AppContent() {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  return (
-    <div className="App">
-      <Navbar />
-      <div className="container">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/add-product" element={<AddProduct />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </div>
-  );
-}
+};
 
 export default App; 

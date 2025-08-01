@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
+from app.models import User, UserRole
 from app.schemas import TokenData
 import os
 from dotenv import load_dotenv
@@ -54,9 +54,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        role: str = payload.get("role")
         if username is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = TokenData(username=username, role=UserRole(role) if role else None)
     except JWTError:
         raise credentials_exception
     return token_data
@@ -69,4 +70,28 @@ def get_current_user(token_data: TokenData = Depends(verify_token), db: Session 
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return user 
+    return user
+
+# Role-based access control functions
+def require_role(required_role: UserRole):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role != required_role.value and current_user.role != UserRole.ADMIN.value:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Requires {required_role.value} role or higher."
+            )
+        return current_user
+    return role_checker
+
+def require_admin_or_manager():
+    def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in [UserRole.ADMIN.value, UserRole.MANAGER.value]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied. Requires manager role or higher."
+            )
+        return current_user
+    return role_checker
+
+def require_admin():
+    return require_role(UserRole.ADMIN) 

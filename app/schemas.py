@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from app.models import UserRole
 
 # User schemas
 class UserBase(BaseModel):
@@ -8,9 +9,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    role: Optional[UserRole] = UserRole.USER
 
 class User(UserBase):
     id: int
+    role: UserRole
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -27,6 +30,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+    role: Optional[UserRole] = None
 
 # Product schemas
 class ProductBase(BaseModel):

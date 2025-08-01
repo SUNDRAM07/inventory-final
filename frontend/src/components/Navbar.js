@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
-  const { logout, user } = useAuth();
+  const { user, logout, isAdmin, canManageProducts, canViewAnalytics } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -11,55 +11,76 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const getRoleBadge = (role) => {
+    // Add null check for role
+    if (!role) return null;
+    
+    const roleColors = {
+      admin: '#dc3545',
+      manager: '#fd7e14',
+      user: '#6c757d'
+    };
+    
+    return (
+      <span 
+        style={{ 
+          backgroundColor: roleColors[role] || '#6c757d',
+          color: 'white',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '0.8em',
+          marginLeft: '8px'
+        }}
+      >
+        {role.toUpperCase()}
+      </span>
+    );
+  };
+
   return (
     <nav className="navbar">
-      <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" className="navbar-brand">
-            <i className="fas fa-boxes"></i> Inventory Management
+      <div className="nav-brand">
+        <Link to="/dashboard">
+          <i className="fas fa-boxes"></i> Inventory Manager
+        </Link>
+      </div>
+      
+      <div className="nav-menu">
+        <Link to="/dashboard" className="nav-link">
+          <i className="fas fa-tachometer-alt"></i> Dashboard
+        </Link>
+        
+        <Link to="/products" className="nav-link">
+          <i className="fas fa-box"></i> Products
+        </Link>
+        
+        {canManageProducts() && (
+          <Link to="/add-product" className="nav-link">
+            <i className="fas fa-plus"></i> Add Product
           </Link>
-          
-          <ul className="navbar-nav">
-            <li>
-              <Link to="/">
-                <i className="fas fa-tachometer-alt"></i> Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link to="/products">
-                <i className="fas fa-box"></i> Products
-              </Link>
-            </li>
-            <li>
-              <Link to="/add-product">
-                <i className="fas fa-plus"></i> Add Product
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics">
-                <i className="fas fa-chart-bar"></i> Analytics
-              </Link>
-            </li>
-            <li>
-              <span style={{ color: '#fff', marginRight: '10px' }}>
-                Welcome, {user?.username}
-              </span>
-              <button 
-                onClick={handleLogout}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: 'white', 
-                  cursor: 'pointer',
-                  padding: '5px 10px',
-                  borderRadius: '4px'
-                }}
-              >
-                <i className="fas fa-sign-out-alt"></i> Logout
-              </button>
-            </li>
-          </ul>
-        </div>
+        )}
+        
+        {canViewAnalytics() && (
+          <Link to="/analytics" className="nav-link">
+            <i className="fas fa-chart-bar"></i> Analytics
+          </Link>
+        )}
+        
+        {isAdmin() && (
+          <Link to="/users" className="nav-link">
+            <i className="fas fa-users"></i> Users
+          </Link>
+        )}
+      </div>
+      
+      <div className="nav-user">
+        <span className="user-info">
+          <i className="fas fa-user"></i> {user?.username || 'User'}
+          {getRoleBadge(user?.role)}
+        </span>
+        <button onClick={handleLogout} className="logout-btn">
+          <i className="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
     </nav>
   );
