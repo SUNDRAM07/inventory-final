@@ -65,19 +65,18 @@ const AddProduct = () => {
   };
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '30px', color: '#333' }}>
-        <i className="fas fa-plus"></i> Add New Product
-      </h1>
+    <div className="container">
+      <div className="page-header">
+        <h1><i className="fas fa-plus"></i> Add New Product</h1>
+        <p>Create a new product in your inventory</p>
+      </div>
 
-      <div className="card">
+      <div className="add-product-form">
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className="form-sections">
             {/* Basic Information */}
-            <div>
-              <h3 style={{ marginBottom: '20px', color: '#333' }}>
-                <i className="fas fa-info-circle"></i> Basic Information
-              </h3>
+            <div className="form-section">
+              <h3><i className="fas fa-info-circle"></i> Basic Information</h3>
               
               <div className="form-group">
                 <label htmlFor="name">Product Name *</label>
@@ -85,9 +84,9 @@ const AddProduct = () => {
                   type="text"
                   id="name"
                   name="name"
-                  className="form-control"
                   value={formData.name}
                   onChange={handleChange}
+                  placeholder="Enter product name"
                   required
                 />
               </div>
@@ -97,7 +96,6 @@ const AddProduct = () => {
                 <select
                   id="type"
                   name="type"
-                  className="form-control"
                   value={formData.type}
                   onChange={handleChange}
                   required
@@ -111,6 +109,8 @@ const AddProduct = () => {
                   <option value="Automotive">Automotive</option>
                   <option value="Health & Beauty">Health & Beauty</option>
                   <option value="Toys">Toys</option>
+                  <option value="Furniture">Furniture</option>
+                  <option value="Appliances">Appliances</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -121,7 +121,6 @@ const AddProduct = () => {
                   type="text"
                   id="sku"
                   name="sku"
-                  className="form-control"
                   value={formData.sku}
                   onChange={handleChange}
                   placeholder="e.g., PROD-001"
@@ -131,10 +130,8 @@ const AddProduct = () => {
             </div>
 
             {/* Inventory & Pricing */}
-            <div>
-              <h3 style={{ marginBottom: '20px', color: '#333' }}>
-                <i className="fas fa-warehouse"></i> Inventory & Pricing
-              </h3>
+            <div className="form-section">
+              <h3><i className="fas fa-warehouse"></i> Inventory & Pricing</h3>
               
               <div className="form-group">
                 <label htmlFor="quantity">Initial Quantity *</label>
@@ -142,10 +139,10 @@ const AddProduct = () => {
                   type="number"
                   id="quantity"
                   name="quantity"
-                  className="form-control"
                   value={formData.quantity}
                   onChange={handleChange}
                   min="0"
+                  placeholder="0"
                   required
                 />
               </div>
@@ -156,11 +153,11 @@ const AddProduct = () => {
                   type="number"
                   id="price"
                   name="price"
-                  className="form-control"
                   value={formData.price}
                   onChange={handleChange}
                   min="0.01"
                   step="0.01"
+                  placeholder="0.00"
                   required
                 />
               </div>
@@ -171,22 +168,15 @@ const AddProduct = () => {
                   type="url"
                   id="image_url"
                   name="image_url"
-                  className="form-control"
                   value={formData.image_url}
                   onChange={handleChange}
                   placeholder="https://example.com/image.jpg"
                 />
                 {formData.image_url && (
-                  <div style={{ marginTop: '10px' }}>
+                  <div className="image-preview">
                     <img 
                       src={formData.image_url} 
                       alt="Product preview" 
-                      style={{ 
-                        maxWidth: '100px', 
-                        maxHeight: '100px', 
-                        border: '1px solid #ddd',
-                        borderRadius: '4px'
-                      }}
                       onError={(e) => {
                         e.target.style.display = 'none';
                       }}
@@ -198,34 +188,44 @@ const AddProduct = () => {
           </div>
 
           {/* Description */}
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              className="form-control"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              placeholder="Enter product description..."
-            />
+          <div className="form-section full-width">
+            <h3><i className="fas fa-align-left"></i> Product Description</h3>
+            <div className="form-group">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="6"
+                placeholder="Enter detailed product description..."
+              />
+            </div>
           </div>
 
           {/* Submit Buttons */}
-          <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+          <div className="form-actions">
             <button
               type="submit"
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Adding Product...' : 'Add Product'}
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i> Adding Product...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-plus"></i> Add Product
+                </>
+              )}
             </button>
             <button
               type="button"
-              className="btn btn-danger"
+              className="btn btn-secondary"
               onClick={() => navigate('/products')}
             >
-              Cancel
+              <i className="fas fa-times"></i> Cancel
             </button>
           </div>
         </form>
