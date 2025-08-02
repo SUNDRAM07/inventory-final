@@ -6,7 +6,7 @@ import json
 app = FastAPI(title="Inventory Management Tool")
 
 # CORS middleware
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://inventory-final-07.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
