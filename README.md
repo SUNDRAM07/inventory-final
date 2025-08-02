@@ -1,6 +1,26 @@
 # Inventory Management Tool
 
-A comprehensive inventory management system with FastAPI backend and React frontend, featuring Google OAuth authentication and real-time analytics.
+A comprehensive inventory management system with FastAPI backend and React frontend, featuring Google OAuth authentication and real-time analytics. **Fully deployed and working on Vercel!**
+
+## 🚀 Live Demo
+
+- **Frontend**: https://inventory-final-07.vercel.app
+- **Backend API**: https://inventory-final-backend.vercel.app
+- **API Documentation**: https://inventory-final-backend.vercel.app/docs
+
+## ✅ Working Features
+
+- **🔐 Google OAuth Authentication**: Real Google authentication with user creation
+- **👥 User Management**: Role-based access control (Admin, Manager, User)
+- **📦 Product Management**: Add, update, and retrieve products with timestamps
+- **📊 Real-time Analytics**: Interactive charts and insights
+- **🔄 Inventory Tracking**: Real-time quantity updates and low stock alerts
+- **🎨 Modern UI**: Beautiful React frontend with responsive design
+- **🔒 JWT Authentication**: Secure token-based authentication
+- **📚 RESTful API**: Clean, documented API endpoints
+- **🗄️ Database**: PostgreSQL with SQLAlchemy ORM
+- **🐳 Docker Support**: Containerized application
+- **📖 OpenAPI Documentation**: Auto-generated Swagger docs
 
 ## Features
 
@@ -25,6 +45,17 @@ A comprehensive inventory management system with FastAPI backend and React front
 - **JWT** - Authentication tokens
 - **bcrypt** - Password hashing
 - **Google OAuth** - Third-party authentication
+- **httpx** - HTTP client for Google OAuth
+
+## 🔧 Recent Fixes
+
+✅ **Fixed Vercel deployment issues**
+✅ **Resolved Google OAuth authentication**
+✅ **Fixed JWT token generation**
+✅ **Added proper user management**
+✅ **Fixed product timestamp issues**
+✅ **Resolved CORS configuration**
+✅ **Added real Google user data integration**
 
 ### Frontend
 - **React 18** - Modern UI library
@@ -37,6 +68,19 @@ A comprehensive inventory management system with FastAPI backend and React front
 - **Docker & Docker Compose** - Containerization
 - **Python 3.12** - Backend runtime
 - **Node.js** - Frontend runtime
+
+## 🚀 Deployment Status
+
+✅ **Fully Deployed on Vercel**
+- Frontend: https://inventory-final-07.vercel.app
+- Backend: https://inventory-final-backend.vercel.app
+- All features working including Google OAuth
+
+## 📋 Test Accounts
+
+- **Admin**: `SAdmin` / `12345qwerty`
+- **Manager**: `Manager1` / `manager123`
+- **User**: `User1` / `user123`
 
 ## Quick Start
 
