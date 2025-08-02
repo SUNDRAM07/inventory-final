@@ -23,8 +23,9 @@ from app.auth import (
 )
 from app.google_auth import authenticate_google_user
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables (only if DATABASE_URL is set)
+if os.getenv("DATABASE_URL"):
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Inventory Management Tool",
@@ -314,4 +315,9 @@ def health_check():
     """
     Health check endpoint.
     """
-    return {"status": "healthy"} 
+    return {
+        "status": "healthy",
+        "database_configured": bool(os.getenv("DATABASE_URL")),
+        "google_oauth_configured": bool(os.getenv("GOOGLE_CLIENT_ID")),
+        "environment": "production" if os.getenv("DATABASE_URL") else "development"
+    } 
