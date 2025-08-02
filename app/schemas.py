@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 from app.models import UserRole
@@ -9,10 +9,15 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    role: Optional[UserRole] = UserRole.USER
+    role: Optional[str] = 'user'  # Use string value instead of enum
 
 class User(UserBase):
     id: int
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    profile_picture: Optional[str] = None
+    auth_provider: str
     role: UserRole
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -24,9 +29,13 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class GoogleAuthRequest(BaseModel):
+    token: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user: Optional[User] = None
 
 class TokenData(BaseModel):
     username: Optional[str] = None

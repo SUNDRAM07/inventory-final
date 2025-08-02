@@ -3,12 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
+import os
 
 from app.database import get_db, engine
 from app.models import Base, UserRole
 from app.schemas import (
     UserCreate, User, UserLogin, Token, 
-    ProductCreate, Product, ProductUpdate, ProductResponse
+    ProductCreate, Product, ProductUpdate, ProductResponse,
+    GoogleAuthRequest
 )
 from app.crud import (
     create_user, get_user_by_username, get_all_users, update_user_role, delete_user,
@@ -19,6 +21,7 @@ from app.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user,
     require_admin, require_admin_or_manager
 )
+from app.google_auth import authenticate_google_user
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -73,6 +76,163 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/auth/google", response_model=Token)
+async def google_auth(auth_request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate user with Google OAuth and return JWT token.
+    """
+    try:
+        # Check if the token is an authorization code or ID token
+        if len(auth_request.token) > 100:  # ID tokens are longer
+            # It's an ID token, use it directly
+            result = await authenticate_google_user(db, auth_request.token)
+            return result
+        else:
+            # It's an authorization code, exchange it for tokens
+            import httpx
+            
+            client_id = os.getenv("GOOGLE_CLIENT_ID")
+            client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+            redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+            
+            # Exchange code for tokens
+            token_url = "https://oauth2.googleapis.com/token"
+            token_data = {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": auth_request.token,
+                "grant_type": "authorization_code",
+                "redirect_uri": redirect_uri
+            }
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                print(f"Exchanging code for token...")
+                response = await client.post(token_url, data=token_data)
+                print(f"Token exchange response: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"Token exchange error: {response.text}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Failed to exchange code for token"
+                    )
+                
+                token_info = response.json()
+                id_token_str = token_info.get("id_token")
+                
+                if not id_token_str:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="No ID token received from Google"
+                    )
+                
+                # Now authenticate the user with the verified token
+                result = await authenticate_google_user(db, id_token_str)
+                return result
+                
+    except Exception as e:
+        import traceback
+        print(f"Google OAuth error: {str(e)}")
+        print(f"Full traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Google authentication failed: {str(e)}"
+        )
+
+@app.get("/auth/google/callback")
+async def google_auth_callback(code: str, db: Session = Depends(get_db)):
+    """
+    Handle Google OAuth callback with authorization code.
+    """
+    try:
+        # Exchange authorization code for tokens
+        import os
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        
+        # Exchange code for tokens
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri
+        }
+        
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.post(token_url, data=token_data)
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to exchange code for token"
+                )
+            
+            token_info = response.json()
+            id_token_str = token_info.get("id_token")
+            
+            if not id_token_str:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No ID token received from Google"
+                )
+            
+            # Verify and decode the ID token
+            idinfo = id_token.verify_oauth2_token(
+                id_token_str, 
+                google_requests.Request(), 
+                client_id
+            )
+            
+            # Now authenticate the user with the verified token
+            result = await authenticate_google_user(db, id_token_str)
+            return result
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Google OAuth callback failed: {str(e)}"
+        )
+
+@app.get("/auth/google/url")
+def get_google_auth_url():
+    """
+    Get Google OAuth authorization URL.
+    """
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/callback")
+    
+    if not client_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google OAuth not configured"
+        )
+    
+    from urllib.parse import urlencode
+    
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline"
+    }
+    
+    # Build query string with proper URL encoding
+    query_string = urlencode(params)
+    full_url = f"{auth_url}?{query_string}"
+    
+    return {"auth_url": full_url}
 
 # Admin-only endpoints
 @app.get("/users", response_model=List[User])

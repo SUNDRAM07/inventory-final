@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, password, role = 'user') => {
     try {
-      const response = await axios.post('/register', { username, password, role });
+      await axios.post('/register', { username, password, role });
       toast.success('Registration successful! Please login.');
       return true;
     } catch (error) {
@@ -94,6 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     login,
     register,
     logout,

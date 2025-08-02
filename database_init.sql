@@ -8,7 +8,13 @@ CREATE TYPE user_role AS ENUM ('admin', 'manager', 'user');
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
+    hashed_password VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    google_id VARCHAR(255) UNIQUE,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    profile_picture TEXT,
+    auth_provider VARCHAR(50) DEFAULT 'local',
     role user_role DEFAULT 'user' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE
@@ -30,6 +36,8 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
 CREATE INDEX IF NOT EXISTS idx_products_type ON products(type);
@@ -37,16 +45,16 @@ CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
 
 -- Insert pre-created accounts
 -- Admin account: SAdmin / 12345qwerty
-INSERT INTO users (username, hashed_password, role) VALUES 
-('SAdmin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbQJQKz6.', 'admin');
+INSERT INTO users (username, hashed_password, email, auth_provider, role) VALUES 
+('SAdmin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbQJQKz6.', 'admin@inventory.com', 'local', 'admin');
 
 -- Manager account: Manager1 / manager123
-INSERT INTO users (username, hashed_password, role) VALUES 
-('Manager1', '$2b$12$GxVn1hU58eUtfXa4X112Au5NpEnNNA1u9qIofylg7imaFOhqWDyNe', 'manager');
+INSERT INTO users (username, hashed_password, email, auth_provider, role) VALUES 
+('Manager1', '$2b$12$GxVn1hU58eUtfXa4X112Au5NpEnNNA1u9qIofylg7imaFOhqWDyNe', 'manager@inventory.com', 'local', 'manager');
 
 -- User account: User1 / user123
-INSERT INTO users (username, hashed_password, role) VALUES 
-('User1', '$2b$12$HxVn1hU58eUtfXa4X112Au5NpEnNNA1u9qIofylg7imaFOhqWDyNe', 'user');
+INSERT INTO users (username, hashed_password, email, auth_provider, role) VALUES 
+('User1', '$2b$12$HxVn1hU58eUtfXa4X112Au5NpEnNNA1u9qIofylg7imaFOhqWDyNe', 'user@inventory.com', 'local', 'user');
 
 -- Insert sample product data
 INSERT INTO products (name, type, sku, image_url, description, quantity, price) VALUES
