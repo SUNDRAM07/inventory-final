@@ -45,7 +45,8 @@ def login(user_credentials: dict):
     username = user_credentials.get("username")
     password = user_credentials.get("password")
     
-    if username in users_db:
+    # Check if user exists and password is provided
+    if username in users_db and password:
         return {
             "access_token": f"demo_token_{username}",
             "token_type": "bearer",
