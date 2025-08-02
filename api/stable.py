@@ -125,17 +125,40 @@ async def google_auth(auth_request: dict):
         if not code:
             raise HTTPException(status_code=400, detail="Authorization code is required")
         
-        # Exchange code for tokens (simplified for demo)
-        # In production, you'd make a real request to Google's token endpoint
-        client_id = os.getenv("GOOGLE_CLIENT_ID")
-        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "https://inventory-final-07.vercel.app/auth/callback")
+        # Exchange code for tokens with Google
+        import httpx
         
-        # For demo purposes, create a user based on the code
-        # In production, you'd verify the token with Google
-        email = f"user_{code[:8]}@gmail.com"  # Mock email
-        name = f"Google User {code[:4]}"  # Mock name
-        username = email.split('@')[0]
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri
+        }
+        
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(token_url, data=token_data)
+            
+            if token_response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to exchange code for token")
+            
+            token_info = token_response.json()
+            access_token = token_info.get("access_token")
+            
+            # Get user info from Google
+            userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+            headers = {"Authorization": f"Bearer {access_token}"}
+            
+            user_response = await client.get(userinfo_url, headers=headers)
+            
+            if user_response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to get user info from Google")
+            
+            user_info = user_response.json()
+            email = user_info.get("email")
+            name = user_info.get("name", "Google User")
+            username = email.split('@')[0] if email else f"user_{code[:8]}"
         
         # Check if user exists, if not create new user
         if username not in users_db:
