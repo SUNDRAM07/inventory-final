@@ -1,0 +1,92 @@
+from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+import os
+import json
+
+app = FastAPI(title="Inventory Management Tool")
+
+# CORS middleware
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# In-memory storage for demo
+users_db = {
+    "SAdmin": {"username": "SAdmin", "role": "admin", "email": "admin@inventory.com"},
+    "Manager1": {"username": "Manager1", "role": "manager", "email": "manager@inventory.com"},
+    "User1": {"username": "User1", "role": "user", "email": "user@inventory.com"}
+}
+
+products_db = [
+    {"id": 1, "name": "iPhone 15 Pro", "type": "Electronics", "sku": "IPH-001", "quantity": 50, "price": 999.99},
+    {"id": 2, "name": "MacBook Air", "type": "Electronics", "sku": "MAC-001", "quantity": 25, "price": 1299.99}
+]
+
+@app.get("/")
+def read_root():
+    return {"message": "Inventory Management Tool API - Stable Version"}
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "database_configured": bool(os.getenv("DATABASE_URL")),
+        "google_oauth_configured": bool(os.getenv("GOOGLE_CLIENT_ID")),
+        "environment": "production" if os.getenv("DATABASE_URL") else "development"
+    }
+
+@app.post("/login")
+def login(user_credentials: dict):
+    username = user_credentials.get("username")
+    password = user_credentials.get("password")
+    
+    if username in users_db:
+        return {
+            "access_token": f"demo_token_{username}",
+            "token_type": "bearer",
+            "user": users_db[username]
+        }
+    
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@app.get("/products")
+def get_products():
+    return products_db
+
+@app.post("/products")
+def add_product(product_data: dict):
+    new_id = len(products_db) + 1
+    product = {
+        "id": new_id,
+        "name": product_data.get("name"),
+        "type": product_data.get("type"),
+        "sku": product_data.get("sku"),
+        "quantity": product_data.get("quantity", 0),
+        "price": product_data.get("price", 0.0)
+    }
+    products_db.append(product)
+    return {"message": "Product added", "product_id": new_id}
+
+@app.get("/auth/google/url")
+def get_google_auth_url():
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Google OAuth not configured")
+    
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/callback")
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid email profile"
+    
+    return {"auth_url": auth_url}
+
+@app.post("/auth/google")
+def google_auth(auth_request: dict):
+    return {
+        "access_token": "google_demo_token",
+        "token_type": "bearer",
+        "user": {"username": "google_user", "role": "user"}
+    } 
