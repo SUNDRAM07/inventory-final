@@ -66,6 +66,22 @@ def login(user_credentials: dict):
     
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
+@app.get("/users")
+def get_users():
+    """
+    Get all users (admin only)
+    """
+    return [
+        {
+            "id": i,
+            "username": user["username"],
+            "role": user["role"],
+            "email": user["email"],
+            "created_at": "2024-01-01T00:00:00Z"
+        }
+        for i, user in enumerate(users_db.values(), 1)
+    ]
+
 @app.get("/products")
 def get_products():
     return products_db
