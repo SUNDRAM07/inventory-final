@@ -119,13 +119,22 @@ async def google_auth(auth_request: dict):
     Handle Google OAuth authentication
     """
     try:
-        # For now, create a mock Google user
-        # In production, you'd verify the Google token here
-        google_user_data = auth_request.get("user", {})
-        email = google_user_data.get("email", "google@example.com")
-        name = google_user_data.get("name", "Google User")
+        # Get the authorization code from the request
+        code = auth_request.get("token")
         
-        # Create username from email
+        if not code:
+            raise HTTPException(status_code=400, detail="Authorization code is required")
+        
+        # Exchange code for tokens (simplified for demo)
+        # In production, you'd make a real request to Google's token endpoint
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "https://inventory-final-07.vercel.app/auth/callback")
+        
+        # For demo purposes, create a user based on the code
+        # In production, you'd verify the token with Google
+        email = f"user_{code[:8]}@gmail.com"  # Mock email
+        name = f"Google User {code[:4]}"  # Mock name
         username = email.split('@')[0]
         
         # Check if user exists, if not create new user
