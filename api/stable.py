@@ -76,7 +76,9 @@ def get_users():
             "id": i,
             "username": user["username"],
             "role": user["role"],
-            "email": user["email"],
+            "email": user.get("email", ""),
+            "name": user.get("name", ""),
+            "auth_provider": user.get("auth_provider", "local"),
             "created_at": "2024-01-01T00:00:00Z"
         }
         for i, user in enumerate(users_db.values(), 1)
@@ -106,15 +108,50 @@ def get_google_auth_url():
     if not client_id:
         raise HTTPException(status_code=400, detail="Google OAuth not configured")
     
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/callback")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "https://inventory-final-07.vercel.app/auth/callback")
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid email profile"
     
     return {"auth_url": auth_url}
 
 @app.post("/auth/google")
-def google_auth(auth_request: dict):
-    return {
-        "access_token": "google_demo_token",
-        "token_type": "bearer",
-        "user": {"username": "google_user", "role": "user"}
-    } 
+async def google_auth(auth_request: dict):
+    """
+    Handle Google OAuth authentication
+    """
+    try:
+        # For now, create a mock Google user
+        # In production, you'd verify the Google token here
+        google_user_data = auth_request.get("user", {})
+        email = google_user_data.get("email", "google@example.com")
+        name = google_user_data.get("name", "Google User")
+        
+        # Create username from email
+        username = email.split('@')[0]
+        
+        # Check if user exists, if not create new user
+        if username not in users_db:
+            users_db[username] = {
+                "username": username,
+                "role": "user",
+                "email": email,
+                "name": name,
+                "auth_provider": "google"
+            }
+        
+        # Create JWT token
+        secret_key = os.getenv("SECRET_KEY", "inventory-secret-key-2024")
+        payload = {
+            "sub": username,
+            "role": users_db[username]["role"],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }
+        access_token = jwt.encode(payload, secret_key, algorithm="HS256")
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": users_db[username]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}") 
