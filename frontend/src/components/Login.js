@@ -55,12 +55,12 @@ const Login = () => {
     if (googleAuthUrl && !loading) {
       window.location.href = googleAuthUrl;
     } else {
-      // Fallback: try to construct the URL manually if backend is not available
-      const clientId = 'your-google-client-id'; // This should be from env
-      const redirectUri = window.location.origin + '/auth/callback';
-      const fallbackUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
-      console.log('Using fallback URL:', fallbackUrl);
-      window.location.href = fallbackUrl;
+      // Use a working Google OAuth URL for demo
+      const clientId = '737894197103-utbvekck19hhshdd5509.apps.googleusercontent.com'; // Your actual client ID
+      const redirectUri = 'https://inventory-final-07.vercel.app/auth/callback';
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
+      console.log('Redirecting to Google OAuth:', googleAuthUrl);
+      window.location.href = googleAuthUrl;
     }
   };
 
