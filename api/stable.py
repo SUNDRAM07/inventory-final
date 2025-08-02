@@ -25,8 +25,24 @@ users_db = {
 }
 
 products_db = [
-    {"id": 1, "name": "iPhone 15 Pro", "type": "Electronics", "sku": "IPH-001", "quantity": 50, "price": 999.99},
-    {"id": 2, "name": "MacBook Air", "type": "Electronics", "sku": "MAC-001", "quantity": 25, "price": 1299.99}
+    {
+        "id": 1, 
+        "name": "iPhone 15 Pro", 
+        "type": "Electronics", 
+        "sku": "IPH-001", 
+        "quantity": 50, 
+        "price": 999.99,
+        "created_at": "2024-01-15T10:30:00Z"
+    },
+    {
+        "id": 2, 
+        "name": "MacBook Air", 
+        "type": "Electronics", 
+        "sku": "MAC-001", 
+        "quantity": 25, 
+        "price": 1299.99,
+        "created_at": "2024-01-20T14:45:00Z"
+    }
 ]
 
 @app.get("/")
@@ -91,13 +107,15 @@ def get_products():
 @app.post("/products")
 def add_product(product_data: dict):
     new_id = len(products_db) + 1
+    current_time = datetime.datetime.utcnow().isoformat() + "Z"
     product = {
         "id": new_id,
         "name": product_data.get("name"),
         "type": product_data.get("type"),
         "sku": product_data.get("sku"),
         "quantity": product_data.get("quantity", 0),
-        "price": product_data.get("price", 0.0)
+        "price": product_data.get("price", 0.0),
+        "created_at": current_time
     }
     products_db.append(product)
     return {"message": "Product added", "product_id": new_id}
