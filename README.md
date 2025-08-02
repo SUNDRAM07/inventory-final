@@ -50,7 +50,7 @@ A comprehensive inventory management system with FastAPI backend and React front
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/SUNDRAM07/inventory-final
    cd inventory
    ```
 
