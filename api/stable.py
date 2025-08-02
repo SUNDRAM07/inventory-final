@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
+import jwt
+import datetime
 
 app = FastAPI(title="Inventory Management Tool")
 
@@ -47,8 +49,17 @@ def login(user_credentials: dict):
     
     # Check if user exists and password is provided
     if username in users_db and password:
+        # Create a proper JWT token
+        secret_key = os.getenv("SECRET_KEY", "inventory-secret-key-2024")
+        payload = {
+            "sub": username,
+            "role": users_db[username]["role"],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }
+        access_token = jwt.encode(payload, secret_key, algorithm="HS256")
+        
         return {
-            "access_token": f"demo_token_{username}",
+            "access_token": access_token,
             "token_type": "bearer",
             "user": users_db[username]
         }
