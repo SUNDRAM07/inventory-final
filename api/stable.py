@@ -128,6 +128,13 @@ async def google_auth(auth_request: dict):
         # Exchange code for tokens with Google
         import httpx
         
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "https://inventory-final-07.vercel.app/auth/callback")
+        
+        if not client_id or not client_secret:
+            raise HTTPException(status_code=400, detail="Google OAuth not properly configured")
+        
         token_url = "https://oauth2.googleapis.com/token"
         token_data = {
             "client_id": client_id,
