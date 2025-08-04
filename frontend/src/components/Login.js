@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import './Login.css';
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -131,10 +131,10 @@ const Login = () => {
               It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using.
             </p>
             <div className="social-links">
-              <a href="#" className="social-icon">📘</a>
-              <a href="#" className="social-icon">🐦</a>
-              <a href="#" className="social-icon">📷</a>
-              <a href="#" className="social-icon">📺</a>
+              <button type="button" className="social-icon" aria-label="Facebook">📘</button>
+              <button type="button" className="social-icon" aria-label="Twitter">🐦</button>
+              <button type="button" className="social-icon" aria-label="Instagram">📷</button>
+              <button type="button" className="social-icon" aria-label="YouTube">📺</button>
             </div>
           </div>
         </div>
@@ -188,9 +188,9 @@ const Login = () => {
           </form>
 
           <div className="form-footer">
-            <a href="#" className="forgot-link">Lost your password?</a>
+            <button type="button" className="forgot-link" aria-label="Forgot password">Lost your password?</button>
             <p className="terms-text">
-              By clicking on 'Sign in now' you agree to <a href="#" className="link">Terms of Service</a> | <a href="#" className="link">Privacy Policy</a>
+              By clicking on 'Sign in now' you agree to <button type="button" className="link" aria-label="Terms of Service">Terms of Service</button> | <button type="button" className="link" aria-label="Privacy Policy">Privacy Policy</button>
             </p>
           </div>
 
