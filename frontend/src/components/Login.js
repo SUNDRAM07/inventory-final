@@ -187,12 +187,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="form-footer">
-            <button type="button" className="forgot-link" aria-label="Forgot password">Lost your password?</button>
-            <p className="terms-text">
-              By clicking on 'Sign in now' you agree to <button type="button" className="link" aria-label="Terms of Service">Terms of Service</button> | <button type="button" className="link" aria-label="Privacy Policy">Privacy Policy</button>
-            </p>
-          </div>
+
 
           {/* Google OAuth */}
           <div className="google-section">
